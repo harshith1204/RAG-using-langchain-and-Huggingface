@@ -1,10 +1,12 @@
 import streamlit as st
+import os
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import HuggingFaceInstructEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.llms import HuggingFaceHub
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_community.llms import HuggingFaceEndpoint
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from htmlTemplates import css, bot_template, user_template
@@ -29,12 +31,18 @@ def get_text_chunks(text):
 
 def get_vector_store(text_chunks):
     #embeddings = InstructorEmbeddings(HuggingFace)
-    embeddings = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl")
+    embeddings = HuggingFaceEmbeddings()
     vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     return vectorstore
 
 def get_converation_chain(vectorstore):
-    llm= HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
+    llm = HuggingFaceEndpoint(
+            huggingfacehub_api_token = "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",
+            repo_id="mistralai/Mistral-7B-Instruct-v0.2", 
+            temperature = 0.5,
+            max_new_tokens = 512,
+            top_k = 20,
+        )
     memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
     conversation_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
